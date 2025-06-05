@@ -1,40 +1,40 @@
 # ros2_yolo_integration
 ## yolo_pkg
 ### Usage
-1. Run the provided activation script to start the container and prepare the environment
+1. 執行提供的 shell script 來啟動容器並準備環境
 ```
 ./yolo_activate.sh
 ```
-2. Do colcon build and source ./install/setup.bash
+2. 執行 `colcon buiild` 和 `source ./install/setup.bash`
 ```
 r
 ```
-3. Run yolo node
+3. 執行 yolo 節點
 ```
 ros2 run yolo_pkg yolo_detection_node
 ```
 ### Mode
-The YOLO node can operate in different modes depending on your use case:
+YOLO 節點可以以不同的模式運作：
 - Mode 1: Draw bounding boxes without screenshot
-    - Displays YOLO-detected bounding boxes on the output topic `/yolo/detection/compressed`.
+    - 執行 Detection 畫出 bounding boxes，不截圖。在輸出 topic `/yolo/detection/compressed` 上顯示 YOLO 偵測到的 bounding boxes。
 - Mode 2: Draw bounding boxes with screenshot
-    - Captures a screenshot of each detected object and saves it.
-- Mode 3: 5 fps screenshot.
-    - Takes a screenshot from the camera feed at a rate of 5 frames per second.
+    - 執行 Detection 畫出 bounding boxes。對每一個偵測到的物件截圖儲存，儲存位置在 `/fps_screenshots`
+- Mode 3: 5 fps screenshot
+    - 以 5 fps 頻率從截取螢幕截圖
 - Mode 4: segmentation
-    - Enables segmentation mode, displaying segmentation masks on the output topic `/yolo/detection/compressed`.
+    - 啟用 segmentation 模式，在輸出 topic `/yolo/detection/compressed` 顯示分割 mask。
 ### Function
 - draw_bounding_boxes
     - `draw_crosshair`(bool) :
-        - If set to True, the function will draw a crosshair at the center of the image.
+        - 如果設定為 `True`，會在影像的中心繪製一個十字線。
     - `screenshot`(bool) :
-        - If True, the function will capture a screenshot of the image after drawing the bounding boxes.
+        - 如果為 `True`，將在畫出 bounding boxes 後擷取影像的螢幕截圖。
     - `segmentation_status`(bool) :
-        - Controls whether the segmentation overlay is displayed on the output image.
+        - 控制分割 mask 是否顯示在輸出影像上。
     - `bounding_status`(bool) :
-        - Controls whether bounding boxes are displayed on the output image.
+        - 控制是否在輸出影像上顯示 bounding boxes。
 - save_fps_screenshot
-    - Captures screenshots at a fixed rate of 5 frames per second (FPS).
+    - 以每秒 5 幀的固定速率擷取螢幕截圖。
 ### class diagram
 ![Logo](https://github.com/alianlbj23/ros2_yolo_integration/blob/main/img/image_deal.jpeg?raw=true)
 ## yolo_example_pkg
