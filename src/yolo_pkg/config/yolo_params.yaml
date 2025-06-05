@@ -1,5 +1,5 @@
 yolo:
-  conf: 0.6
+  conf: 0.8
   obb_model: "yolo11n_detect_pikachu_best.pt"
   seg_model: "yolo11n_seg_best.pt"
 

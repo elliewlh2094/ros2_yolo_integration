@@ -141,6 +141,7 @@ class YoloDepthExtractor:
         height, width = depth_cv_image.shape[:2]
         center_x = width // 2
         center_y = height // 2
+        lower_y = height // 2 - height // 4
         segment_length = width // self.x_num_splits
 
         # 取得中心點的深度值
@@ -171,8 +172,8 @@ class YoloDepthExtractor:
             return None  # Return None if depth remains NaN
 
         # 取得 n 個等分點的深度值
-        points = [(i * segment_length, center_y) for i in range(self.x_num_splits)]
-        depth_values_list = [depth_cv_image[center_y, x] for x, _ in points]
+        points = [(i * segment_length, lower_y) for i in range(self.x_num_splits)]
+        depth_values_list = [depth_cv_image[lower_y, x] for x, _ in points]
         if not depth_values_list:
             print("No valid depth values found in the horizontal segments.")
             return None

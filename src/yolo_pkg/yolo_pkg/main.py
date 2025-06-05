@@ -12,6 +12,7 @@ from yolo_pkg.camera_geometry import CameraGeometry
 from yolo_pkg.darth_vader_detect import YoloDetectionNode
 
 import threading
+import json
 from std_msgs.msg import String, Float32MultiArray
 from yolo_pkg.load_params import LoadParams
 
@@ -110,11 +111,14 @@ def main():
             # =======================================
             elif user_input == "5":
                 # list: 每個物體的 {'label': str, 'offset_flu': np.ndarray([x, y, z])} 列表。
-                offsets_3d = camera_geometry.calculate_offset_from_crosshair_2d()
-
+                # 但是是 JSON 格式的字串
+                offsets_3d_json = camera_geometry.calculate_offset_from_crosshair_2d()
+                offsets_3d = json.loads(offsets_3d_json)
+                
+                # np.ndarray([x_f, y_f, z_f]):x_f = +Z_cam （前方）,y_f = -X_cam （左方）,z_f = -Y_cam （上方）
                 found = 1 if yolo_boundingbox.get_tags_and_boxes() else 0
-                distance = offsets_3d[0]['offset_flu'][2] if offsets_3d else 0.0
-                delta_x = offsets_3d[0]['offset_flu'][0] if offsets_3d else 0.0
+                distance = offsets_3d[0]['offset_flu'][0] if offsets_3d else 0.0
+                delta_x = offsets_3d[0]['offset_flu'][1] if offsets_3d else 0.0
 
                 # dict: 包含 'center' (x,y) 座標, 'depth', 'depth_values' (list of depth values at x_num_splits points).
                 depth_camera_center_value = yolo_depth_extractor.get_depth_camera_center_value()
@@ -127,10 +131,10 @@ def main():
                     screenshot=False,
                     segmentation_status=False,
                     bounding_status=True,
-                    offsets_3d_json=offsets_3d,
+                    offsets_3d_json=offsets_3d_json,
                 )
                 offset_msg = String()
-                offset_msg.data = offsets_3d
+                offset_msg.data = offsets_3d_json
                 ros_communicator.publish_data("object_offset", offset_msg)
                 
                 yolo_target_info_msg = Float32MultiArray()

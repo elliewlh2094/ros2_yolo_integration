@@ -16,7 +16,7 @@ class CameraGeometry:
 
     def calculate_3d_position(self):
         """
-        計算每個物體在 IMU 坐標系中的 3D 位置。
+        計算每個物體在 IMU 坐標系(機器人本體參考系)中的 3D 位置。
         Returns:
             list: 每個物體的 3D 位置向量。
         """
@@ -33,7 +33,7 @@ class CameraGeometry:
 
     def calculate_offset_from_crosshair_2d(self):
         """
-        計算每個物體中心相對於畫面中心十字架的 3D 偏移，
+        計算每個物體中心相對於畫面中心十字架的 3D 偏移，可讓車頭對齊目標
         並以右手系 (Forward, Left, Up) 表示：
           x: 前方 (Depth)
           y: 左方
@@ -75,12 +75,12 @@ class CameraGeometry:
         通用處理函數，計算每個物體的相關 3D 信息。
 
         Args:
-            calculation_fn (function): 用於計算 3D 信息的函數。
-            result_key (str): 在結果字典中使用的鍵名。
+            calculation_fn (function): 用於計算 3D 資訊的函數。
+            result_key (str): 在結果字典中使用的 key 名稱。
 
         Returns:
             str: 包含每個物體計算結果（數值四捨五入到小數點後三位）的 JSON 字符串。
-                 如果沒有物體，返回空列表的 JSON 字符串 '[]'。
+                 如果沒有物體，回傳空列表的 JSON 字符串 '[]'。
         """
         fx = self.camera_intrinsics["fx"]
         fy = self.camera_intrinsics["fy"]
