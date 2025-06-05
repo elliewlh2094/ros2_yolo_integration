@@ -1,6 +1,6 @@
 yolo:
   conf: 0.6
-  obb_model: "yolo8n_detect_best.pt"
+  obb_model: "yolo11n_detect_pikachu_best.pt"
   seg_model: "yolo11n_seg_best.pt"
 
 image:

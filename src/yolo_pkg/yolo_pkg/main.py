@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 import rclpy
 from rclpy.executors import MultiThreadedExecutor
 from yolo_pkg.ros_communicator import RosCommunicator
@@ -6,8 +9,10 @@ from yolo_pkg.yolo_depth_extractor import YoloDepthExtractor
 from yolo_pkg.yolo_bounding_box import YoloBoundingBox
 from yolo_pkg.boundingbox_visaulizer import BoundingBoxVisualizer
 from yolo_pkg.camera_geometry import CameraGeometry
+from yolo_pkg.darth_vader_detect import YoloDetectionNode
+
 import threading
-from std_msgs.msg import String  # Import String message type
+from std_msgs.msg import String, Float32MultiArray
 from yolo_pkg.load_params import LoadParams
 
 
@@ -17,6 +22,7 @@ def _init_ros_node():
     """
     rclpy.init()
     node = RosCommunicator()  # Initialize the ROS node
+    """MultiThreadedExecutor 支援同時多個 callback 並行執行，這對於同時處理多種 sensor input 或高頻訊息的場景很有用，也能提升效能"""
     executor = MultiThreadedExecutor()  # Use MultiThreadedExecutor
     executor.add_node(node)  # Add the node to the executor
     thread = threading.Thread(
@@ -32,9 +38,10 @@ def menu():
     print("2: Draw bounding boxes with screenshot.")
     print("3: 5 fps screenshot.")
     print("4: segmentation.")
+    print("5: Custom detection. (For final project)")
     print("Press Ctrl+C to exit.")
 
-    user_input = input("Enter your choice (1/4): ")
+    user_input = input("Enter your choice (1-5): ")
     return user_input
 
 
@@ -97,6 +104,42 @@ def main():
                     segmentation_status=True,
                     bounding_status=False,
                 )
+
+            # =======================================
+            # custom detection mode for final project
+            # =======================================
+            elif user_input == "5":
+                # list: 每個物體的 {'label': str, 'offset_flu': np.ndarray([x, y, z])} 列表。
+                offsets_3d = camera_geometry.calculate_offset_from_crosshair_2d()
+
+                found = 1 if yolo_boundingbox.get_tags_and_boxes() else 0
+                distance = offsets_3d[0]['offset_flu'][2] if offsets_3d else 0.0
+                delta_x = offsets_3d[0]['offset_flu'][0] if offsets_3d else 0.0
+
+                # dict: 包含 'center' (x,y) 座標, 'depth', 'depth_values' (list of depth values at x_num_splits points).
+                depth_camera_center_value = yolo_depth_extractor.get_depth_camera_center_value()
+                if depth_camera_center_value is not None:
+                    camera_multi_depth = depth_camera_center_value["depth_values"]
+                else:
+                    camera_multi_depth = [-1.0 for _ in range(yolo_depth_extractor.x_num_splits)]
+                boundingbox_visualizer.draw_bounding_boxes(
+                    draw_crosshair=True,
+                    screenshot=False,
+                    segmentation_status=False,
+                    bounding_status=True,
+                    offsets_3d_json=offsets_3d,
+                )
+                offset_msg = String()
+                offset_msg.data = offsets_3d
+                ros_communicator.publish_data("object_offset", offset_msg)
+                
+                yolo_target_info_msg = Float32MultiArray()
+                yolo_target_info_msg.data = [float(found), float(distance), float(delta_x)]
+                ros_communicator.publish_data("yolo_target_info", yolo_target_info_msg)
+
+                camera_x_multi_depth_values_msg = Float32MultiArray()
+                camera_x_multi_depth_values_msg.data = camera_multi_depth
+                ros_communicator.publish_data("camera_x_multi_depth_values", camera_x_multi_depth_values_msg)
             else:
                 print("Invalid input.")
 

@@ -1,3 +1,9 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+處理 YOLO 模型推論(detection & segmentation)與 bounding box 的產生
+"""
+
 import contextlib
 import io
 

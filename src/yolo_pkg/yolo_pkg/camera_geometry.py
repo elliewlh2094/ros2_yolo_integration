@@ -1,3 +1,9 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+用於計算目標物體和畫面中心的 3D 空間偏移(offset)
+"""
+
 import numpy as np
 from yolo_pkg.camera_parameters import CameraParameters
 import json  # Import the json module

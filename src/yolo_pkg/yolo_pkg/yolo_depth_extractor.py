@@ -1,3 +1,9 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+結合 YOLO 偵測與深度資料，推算出 bounding box 對應目標的深度值
+"""
+
 import numpy as np
 
 
@@ -6,24 +12,20 @@ class YoloDepthExtractor:
         self.yolo_boundingbox = yolo_boundingbox
         self.ros_communicator = ros_communication
         self.image_processor = image_processor
+        # 相機畫面中央高度上切成 n 個等距水平點。
+        self.x_num_splits = 20
 
     def get_yolo_object_depth(self, radius_increment=2, max_iterations=10):
         """
-        Calculates the depth for each detected object.
-        If the center pixel depth is invalid (<=0 or NaN), it iteratively expands
-        a search window outwards from the center, staying within the bounding box,
-        until a valid depth (mean of valid pixels in the window) is found or
-        the window reaches the box limits or max iterations.
+        計算每個偵測到的物體的深度。如果中心像素深度無效 (<=0 or NaN)，則從中心向外搜尋，
+        直到找到有效深度（視窗中有效像素的平均值）或視窗達到 bbox 限制或最大迭代次數
 
         Args:
-            radius_increment (int): The amount to increase the search radius in each
-                                    iteration (e.g., 2 means radius grows 2, 4, 6...).
-            max_iterations (int): Maximum number of expansion steps to prevent infinite loops.
+            radius_increment (int): 每次迭代中搜尋半徑的增量 (e.g., 2 means radius grows 2, 4, 6...).
+            max_iterations (int): 最大迭代步驟數，以防止無限迴圈。
 
         Returns:
-            list: A list of dictionaries, each containing 'label', 'box', and 'depth'.
-                  Depth is in meters (float) or the original invalid value if no valid
-                  depth is found.
+            list: 一個 dictionary list，每個 dict 包含 'label', 'box', and 'depth'. Depth is in meters (float) 如果未找到有效深度，則傳回原本的 invalid value
         """
         depth_cv_image = self.image_processor.get_depth_cv_image()
         if depth_cv_image is None or not isinstance(depth_cv_image, np.ndarray):
@@ -122,12 +124,11 @@ class YoloDepthExtractor:
     # Note: get_depth_camera_center_value still uses a fixed window search
     def get_depth_camera_center_value(self):
         """
-        Returns the depth value at the center point of the depth camera,
-        along with the center coordinates. Uses a fixed window search if center is invalid.
+        傳回深度相機中心點的深度值及其中心座標。如果中心無效，則使用固定視窗搜尋。
 
         Returns:
-            dict: Contains 'center' (x,y) coordinates and 'depth' value.
-                  Returns None if depth image is invalid or no valid depth found near center.
+            dict: 包含 'center' (x,y) 座標, 'depth', 'depth_values' (list of depth values at x_num_splits points).
+            如果深度影像無效或在中心附近未找到有效深度，則傳回 None。
         """
         depth_cv_image = self.image_processor.get_depth_cv_image()
         is_invalid_depth_image = depth_cv_image is None or not isinstance(
@@ -140,9 +141,12 @@ class YoloDepthExtractor:
         height, width = depth_cv_image.shape[:2]
         center_x = width // 2
         center_y = height // 2
+        segment_length = width // self.x_num_splits
 
+        # 取得中心點的深度值
         center_depth = depth_cv_image[center_y, center_x]
 
+        # 如果中心點深度無效 (<=0 or NaN)，則使用固定視窗搜尋
         if center_depth <= 0 or np.isnan(center_depth):
             window_size = 5  # Fixed window size (e.g., 11x11) for camera center
             min_r, max_r = max(0, center_y - window_size), min(
@@ -160,10 +164,25 @@ class YoloDepthExtractor:
                 print("No valid depth value found near the camera center point.")
                 return None
 
-        # Ensure float return, handle potential NaN
+        # 確保返回值為浮點數，處理潛在的 NaN
         final_depth = float(center_depth) if not np.isnan(center_depth) else np.nan
         if np.isnan(final_depth):
             print("Final center depth is NaN.")
             return None  # Return None if depth remains NaN
 
-        return {"center": (center_x, center_y), "depth": final_depth}
+        # 取得 n 個等分點的深度值
+        points = [(i * segment_length, center_y) for i in range(self.x_num_splits)]
+        depth_values_list = [depth_cv_image[center_y, x] for x, _ in points]
+        if not depth_values_list:
+            print("No valid depth values found in the horizontal segments.")
+            return None
+
+        # 確保返回值為浮點數，過濾掉無效的深度值 (<=0 or NaN)
+        depth_values_list = [
+            float(depth) if depth > 0 and not np.isnan(depth) else -1.0
+            for depth in depth_values_list
+        ]
+
+        return {"center": (center_x, center_y), 
+                "depth": final_depth, 
+                "depth_values": depth_values_list}
