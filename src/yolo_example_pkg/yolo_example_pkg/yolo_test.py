@@ -37,7 +37,7 @@ class YoloDetectionNode(Node):
 
         # Load YOLO model
         model_path = os.path.join(
-            get_package_share_directory("yolo_example_pkg"), "models", "yolov8n.pt"
+            get_package_share_directory("yolo_example_pkg"), "models", "yolo8n_detect_best.pt"
         )
         device = "cuda" if torch.cuda.is_available() else "cpu"
         self.get_logger().info(f"Using device: {device}")

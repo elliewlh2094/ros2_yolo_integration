@@ -1,7 +1,7 @@
 yolo:
   conf: 0.6
-  obb_model: "yolov8n.pt"
-  seg_model: "yolo11n-seg.pt"
+  obb_model: "yolo8n_detect_best.pt"
+  seg_model: "yolo11n_seg_best.pt"
 
 image:
   use_compressed: true
